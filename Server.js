@@ -1,28 +1,15 @@
-// server.js
-// Roblox -> OpenAI proxy server
-// Deploy to Render.com (free tier)
-
 const express = require('express');
 const app = express();
 app.use(express.json());
 
 const API_KEY = process.env.OPENAI_API_KEY;
 
-if (!API_KEY) {
-    console.error('ERROR: OPENAI_API_KEY environment variable not set!');
-}
-
-// Keep-alive ping endpoint (called by Roblox every 10 min)
 app.get('/ping', (req, res) => {
-    res.json({ status: 'alive', time: Date.now() });
+    res.json({ status: 'alive' });
 });
 
-// Main GPT endpoint
 app.post('/gpt', async (req, res) => {
-    if (!API_KEY) {
-        return res.status(500).json({ error: 'API key not configured' });
-    }
-
+    if (!API_KEY) return res.status(500).json({ error: 'No API key set' });
     try {
         const response = await fetch('https://api.openai.com/v1/chat/completions', {
             method: 'POST',
@@ -32,15 +19,11 @@ app.post('/gpt', async (req, res) => {
             },
             body: JSON.stringify(req.body)
         });
-
         const data = await response.json();
         res.json(data);
-
     } catch (err) {
-        console.error('OpenAI error:', err.message);
         res.status(500).json({ error: err.message });
     }
 });
 
-const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => console.log(`Proxy running on port ${PORT}`));
+app.listen(process.env.PORT || 3000, () => console.log('Proxy running'));
